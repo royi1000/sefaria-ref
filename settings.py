@@ -59,7 +59,7 @@ simple_refs = {
             'type': 'string',
             'minlength': 1,
             'required': True,
-            'allowed': ["rt", "aramic", "location", "paragraph type"],
+            'allowed': ["rt", "aramic", "location", "paragraph type", "biography", "beur"],
         },
         'content' : {
             'type': 'string',
@@ -68,7 +68,7 @@ simple_refs = {
         },
         'words' :
         {
-            'type' : 'list', 'schema': {'type': 'string'},
+            'type' : 'list', 'schema': {'type': 'string', 'unique': True},
         },
         'single' : {
             'type': 'boolean',
@@ -85,7 +85,7 @@ refs = {
             'required': True,
         },
         'first_word' : {
-            'type': 'string',
+            'type': 'number',
             'required': True,
         },
         'words_count' : {
