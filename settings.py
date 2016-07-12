@@ -46,7 +46,7 @@ CACHE_EXPIRES = 20
 IF_MATCH = False
 
 X_DOMAINS = '*'
-X_HEADERS ='*'
+X_HEADERS ='*, accept, content-type'
 
 # Our API will expose two resources (MongoDB collections): 'people' and
 # 'works'. In order to allow for proper data validation, we define beaviour
@@ -54,6 +54,10 @@ X_HEADERS ='*'
 
 simple_refs = {
     'item_title': 'ref_cont',
+    'additional_lookup': {
+        'url': 'regex("[\w]+")',
+        'field': 'words'
+    },
     'schema': {
         'ref_type' : {
             'type': 'string',
@@ -68,7 +72,7 @@ simple_refs = {
         },
         'words' :
         {
-            'type' : 'list', 'schema': {'type': 'string', 'unique': True},
+            'type' : 'list',
         },
         'single' : {
             'type': 'boolean',
@@ -78,8 +82,8 @@ simple_refs = {
 }
 
 refs = {
-    'item_title': 'ref',
-    'scheme' : {
+    'item_title': 'refs',
+    'schema' : {
         'ref_location' : {
             'type': 'string',
             'required': True,
@@ -99,8 +103,8 @@ refs = {
                 'resource': 'simple_refs',
                 # make the owner embeddable with ?embedded={"owner":1}
                 'embeddable': True
-            },
-        },
+            }
+        }
     }
 }
 
@@ -190,8 +194,6 @@ works = {
 # The DOMAIN dict explains which resources will be available and how they will
 # be accessible to the API consumer.
 DOMAIN = {
-    'people': people,
-    'works': works,
     'simple_refs' : simple_refs,
     'refs' : refs
 

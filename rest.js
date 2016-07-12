@@ -25,6 +25,11 @@ var sef_url = 'http://www.sefaria.org/api/';
 var ref_types = ["rt", "aramic", "location", "paragraph type", "biography", "beur"];
 var he_ref_types = ["ראשי תיבות", "מילון ארמי", "מקום", "קטע", "ביוגרפיה", "ביאור קצר"];
 
+
+//http://127.0.0.1:5000/refs?where={"ref_location":"Berakhot 2a"}&embedded={"link":1}
+//http://127.0.0.1:5000/simple_refs?where={"words": "x" }
+//http://127.0.0.1:5000/simple_refs?where={"words" : {"$in":["x",]}}&max_results=10000
+
 function get_name(i) {
     if($.is_bavli) {
         d = 'a';
@@ -37,6 +42,82 @@ function get_name(i) {
         return i+1;
     }
 
+}
+
+function load_suggested_refs(){
+    u = ref_url+'simple_refs?max_results=100000&where={"single":false}';
+    console.log(u);
+    j={};
+    $.ajax({
+        type: "GET",
+        url: u,
+        data: '',
+        dataType : 'json',
+        contentType : 'application/x-www-form-urlencoded; charset=UTF-8',
+        success: function (a,b,c) {
+            console.log(a,b,c);
+            $.suggested_refs_to_page = a;
+        },
+        error:function (a,b,c) {
+            console.log(a,b,c);
+        },
+        headers : {
+            'Content-Type' : 'application/json'
+        }
+    });
+}
+
+function load_page_refs() {
+    $.reflink = {};
+    u = ref_url+'refs?max_results=100000&where="ref_location"=="'+$.current_content+'"&embedded={"link":1}';
+    console.log(u);
+    j={};
+    $.ajax({
+        type: "GET",
+        url: u,
+        data: '',
+        dataType : 'json',
+        contentType : 'application/x-www-form-urlencoded; charset=UTF-8',
+        success: function (a,b,c) {
+            console.log(a,b,c);
+            $.refs_to_page = a;
+            if ('_items' in $.refs_to_page){
+                $.each($.refs_to_page['_items'], function (i, v) {
+                    var w = v['first_word'];
+                    var count = v['words_count'];
+                    for (var j=0; j<count; j++) {
+                        var ind = w+j;
+                        var o = $('#w'+ind);
+                        var refs = o.attr('refs');
+                        if (!refs) {
+                            refs = [];
+                        }
+                        else {
+                            refs = refs.split(',');
+                        }
+                        o.addClass('reflink');
+                        refs.push(v['link']['_id']);
+                        o.attr('refs', refs.join(','));
+                        $.reflink[v['link']['_id']] = [v['link']['ref_type'], v['link']['content']];
+                        o.click(function () {
+                            var local_refs = $(this).attr('refs').split(',');
+                            var ref_str = '';
+                            $.each(local_refs, function (i, v) {
+                                ref_str += $.reflink[v]+'\n';
+                            });
+                            console.log(ref_str);
+                        });
+                    }
+                })
+            }
+        },
+        error:function (a,b,c) {
+            console.log(a,b,c);
+        },
+        headers : {
+            'Content-Type' : 'application/json'
+        }
+    });
 }
 
 function update_content() {
@@ -64,17 +145,19 @@ function update_content() {
     $('.content').mouseup(function () {
         cont_select();
     });
-    $('#pagename').html(first_section);
+    $('#pagename').html($.current_content);
+    load_page_refs();
+    load_suggested_refs();
 }
 
 function update_chaps() {
-    form_string = '<select class="chaps">';
+    form_string = '<div class="col-xs-2"><select class="chaps form-control">';
     selected = '';
     for(i=0;i<$.content['length'];i++){
         name = get_name(i);
         form_string += '<option value="{0}" {2}>{1}</option>'.format(name, name, selected);
     }
-    form_string += '</select>';
+    form_string += '</select></div>';
     $('#chaps-h').html(form_string);
     $('.chaps').change(function () {
         ind = $(this).find('option:selected')[0].value;
@@ -129,11 +212,24 @@ function get_ref(ref_id) {
 
 }
 
+function setview(v) {
+    $.view = v;
+    for(var i=1; i<4; i++) {
+        if(i == v) {
+            $('#view' + i).addClass('active');
+        }
+        else {
+            $('#view' + i).removeClass('active')
+        }
+    }
+}
+
 function update_toc()
 {
+    $.view = 1;
     level = 0;
     toc = $.toc;
-    form_string ='';
+    form_string ='<div class="row">';
     last_object = {'contents': toc};
     while ('contents' in last_object) {
         last_object_list = last_object['contents'];
@@ -146,7 +242,7 @@ function update_toc()
         else {
             $.toc_index[level] = 0;
         }
-        form_string += '<select class="opt" name="toc{0}">'.format(level);
+        form_string += '<div class="col-xs-2"><select class="opt form-control" name="toc{0}">'.format(level);
         $.each(last_object_list, function (i, v) {
             selected = '';
 
@@ -162,10 +258,10 @@ function update_toc()
             }
             form_string += '<option value="{0}" {2}>{1}</option>'.format(i, name, selected);
         });
-        form_string += '</select>';
+        form_string += '</select></div>';
         level += 1;
     }
-    form_string += '<span id="chaps-h"></span>';
+    form_string += '<span id="chaps-h"></span></div>';
     first_section = last_object['firstSection'];
     $.last_object = last_object;
     $.current_content = last_object['firstSection'];
@@ -201,16 +297,70 @@ function get_toc() {
     });
 }
 
+function linkref(id) {
+    link_json = {
+        'ref_location' : $.current_content,
+        'first_word' : $.sel_start,
+        'words_count': $.sel_end - $.sel_start + 1,
+        'link': id
+    };
+    $.ajax({
+        type: "POST",
+        url: ref_url+'refs/',
+        data: JSON.stringify(link_json),
+        dataType : 'json',
+        contentType : 'application/x-www-form-urlencoded; charset=UTF-8',
+        success: function (a,b,c) {
+            console.log(a,b,c);
+        },
+        error:function (a,b,c) {
+            console.log(a,b,c);
+        },
+        headers : {
+            'Content-Type' : 'application/json'
+        }
+    });
+    console.log("create link ref");
+}
+
+function createref() {
+    j = {
+        'ref_type': $('.reftype')[0].value,
+        'content' : $('.reftext')[0].value,
+        'words' : [$('#choosed_text').text()],
+        'single' : $('.uniqe')[0].checked
+    };
+    $.ajax({
+        type: "POST",
+        url: ref_url+'simple_refs/',
+        data: JSON.stringify(j),
+        dataType : 'json',
+        contentType : 'application/x-www-form-urlencoded; charset=UTF-8',
+        success: function (a,b,c) {
+            linkref(a["_id"]);
+            console.log(a,b,c);
+        },
+        error:function (a,b,c) {
+            console.log(a,b,c);
+        },
+        headers : {
+            'Content-Type' : 'application/json'
+        }
+    });
+    console.log("create ref");
+}
+
 function new_ref(start, end) {
     text = $.content_str.split(' ').slice(start, end+1).join(' ');
     $('#choosed_text').html(text);
-    ref_str =  'סוג:' + '<select class="reftype">';
+    ref_str =  'סוג:' + '<div class="row"><div class="col-xs-4 pull-right" ><select class="reftype form-control">';
     $.each(ref_types, function (i, v) {
         ref_str += '<option value="{0}">{1}</option>'.format(v, he_ref_types[i]);
     });
-    ref_str += '</select><br/>' + 'ייחודי:';
+    ref_str += '</select></div></div><br/>' + 'ייחודי:';
     ref_str += '<input type="checkbox" class="uniqe"></input><br/>' + 'תוכן:';
-    ref_str += '<textarea class="reftext" style="width: 100%; height: 300px;"></textarea><br/>'
+    ref_str += '<textarea class="reftext form-control" style="width: 100%; height: 300px;"></textarea><br/>';
+    ref_str += '<button onclick="createref()" class="btn btn-default"> יצירת קישור </button>';
     $('#ref_elements').html(ref_str);
 }
 
@@ -218,10 +368,10 @@ function cont_select() {
     userSelection = window.getSelection();
     rangeObject = userSelection.getRangeAt(0);
 
-    start = parseInt(rangeObject.startContainer.parentNode.id.substring(1));
-    end = parseInt(rangeObject.endContainer.parentNode.id.substring(1));
-    console.log(start, end-start+1, rangeObject.startContainer.parentNode.textContent.replace(/\s/g, ''));
-    new_ref(start, end);
+    $.sel_start = parseInt(rangeObject.startContainer.parentNode.id.substring(1));
+    $.sel_end = parseInt(rangeObject.endContainer.parentNode.id.substring(1));
+    //console.log($.sel_start, $.sel_end-$.sel_start+1, rangeObject.startContainer.parentNode.textContent.replace(/\s/g, ''));
+    new_ref($.sel_start, $.sel_end);
 }
 
 $( document ).ready(function() {
