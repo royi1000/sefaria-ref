@@ -9,3 +9,7 @@ body {
 .reflink {
     color: royalblue;
 }
+
+.high {
+    background: yellow;
+}

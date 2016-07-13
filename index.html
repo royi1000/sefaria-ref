@@ -18,13 +18,14 @@
         <div id="toc" class="form-group"></div>
         <h3 id="pagename"></h3>
         <ul class="nav nav-tabs pull-right" role="tablist">
-            <li role="presentation" id="view1" class="active" onclick="setview(1)"><a href="#">הצגה<span class="badge">40</span></a></li>
-            <li role="presentation" id="view2" ><a href="#" onclick="setview(2)">עריכה</a></li>
-            <li role="presentation" id="view3"><a href="#" onclick="setview(3)">הצעות<span class="badge">42</span></a></li>
+            <li role="presentation" id="view1" class="active" onclick="setview(1)"><a href="#">הצגה<span id="badge1" class="badge"></span></a></li>
+            <li role="presentation" id="view2" ><a href="#" onclick="setview(2)">הוספה</a></li>
+            <li role="presentation" id="view3"><a href="#" onclick="setview(3)">הצעות<span  id="badge2" class="badge">0</span></a></li>
         </ul>
         <div class="row">
             <div class="col-md-8 content">טוען...</div>
-            <div class="col-md-4 ref">טקסט:
+            <div class="col-md-4 ref">
+                <div class="reftext"></div>
                 <span id="choosed_text" style="font-weight: bold"></span>
                 <div id="ref_elements" class="form-group"></div>
             </div>
