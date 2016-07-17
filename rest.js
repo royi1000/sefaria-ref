@@ -45,8 +45,8 @@ function FindWordIndex(str, findme) {
 
 var ref_url = 'http://localhost:5000/';
 var sef_url = 'http://www.sefaria.org/api/';
-var ref_types = ["rt", "aramic", "location", "paragraph type", "biography", "beur"];
-var he_ref_types = ["ראשי תיבות", "מילון ארמי", "מקום", "קטע", "ביוגרפיה", "ביאור קצר"];
+var ref_types = ["rt", "aramic", "location", "paragraph type", "biography", "beur", "dictionary", "halacha"];
+var he_ref_types = ["ראשי תיבות", "מילון ארמי", "מקום", "קטע", "ביוגרפיה", "ביאור קצר", "מילון", "הלכה"];
 
 //http://127.0.0.1:5000/refs?where={"ref_location":"Berakhot 2a"}&embedded={"link":1}
 //http://127.0.0.1:5000/simple_refs?where={"words": "x" }
@@ -68,7 +68,7 @@ function get_name(i) {
 
 function load_suggested_refs(){
     u = ref_url+'simple_refs?max_results=100000&where={"single":false}';
-    console.log(u);
+    //console.log(u);
     j={};
     $.ajax({
         type: "GET",
@@ -77,7 +77,7 @@ function load_suggested_refs(){
         dataType : 'json',
         contentType : 'application/x-www-form-urlencoded; charset=UTF-8',
         success: function (a,b,c) {
-            console.log(a,b,c);
+            //console.log(a,b,c);
             $.suggestions = [];
             $.suggestions_count = 0;
             $.suggested_refs_to_page = a;
@@ -111,7 +111,7 @@ function load_suggested_refs(){
 function load_page_refs() {
     $.reflink = {};
     u = ref_url+'refs?max_results=100000&where="ref_location"=="'+$.current_content+'"&embedded={"link":1}';
-    console.log(u);
+    //console.log(u);
     j={};
     $.ajax({
         type: "GET",
@@ -120,7 +120,7 @@ function load_page_refs() {
         dataType : 'json',
         contentType : 'application/x-www-form-urlencoded; charset=UTF-8',
         success: function (a,b,c) {
-            console.log(a,b,c);
+            //console.log(a,b,c);
             $.refs_to_page = a;
             $.existing_word_refs = {}
             $('#badge1').text('0');
@@ -148,7 +148,7 @@ function load_page_refs() {
                         o.addClass('reflink');
                         refs.push(v['link']['_id']);
                         o.attr('refs', refs.join(','));
-                        $.reflink['w'+ ind + v['link']['_id']] = [v['link']['ref_type'], v['link']['content'], all_w];
+                        $.reflink['w'+ ind + v['link']['_id']] = [v['link']['ref_type'], v['link']['content'], all_w, v];
                     }
                 })
             }
@@ -293,14 +293,19 @@ function ref_suggest() {
                 });
             }
         })
-        $('.reftext').html('<a class="btn btn-default" onclick="suggest_next();">הבא</a> <a class="btn btn-default" onclick="suggest_prev();">הקודם</a>');
+        var txt = '<a class="btn btn-default" onclick="suggest_next();">הבא</a> <a class="btn btn-default" onclick="suggest_prev();">הקודם</a>';
+        $('.reftext').html(txt);
         $('#ref_elements').html(ref_str);
     }
 }
 
+function ref_edit() {
+    
+}
+
 function setview(v) {
     $.view = v;
-    for(var i=1; i<4; i++) {
+    for(var i=1; i<5; i++) {
         if(i == v) {
             $('#view' + i).addClass('active');
         }
@@ -322,6 +327,12 @@ function setview(v) {
         $.current_suggest=0;
         ref_suggest()
     }
+    if ($.view==4) {
+        $('.word').click(function () {
+            edit_ref_click(this);
+        });
+    }
+
 }
 
 function update_toc()
@@ -396,6 +407,32 @@ function get_toc() {
     });
 }
 
+function addref(id, w) {
+    words = w.split(',');
+    words.push($('#choosed_text').text().trim());
+    j = {
+        'words' : words
+    };
+    $.ajax({
+        type: "PATCH",
+        url: ref_url+'simple_refs/'+id,
+        data: JSON.stringify(j),
+        dataType : 'json',
+        contentType : 'application/x-www-form-urlencoded; charset=UTF-8',
+        success: function (a,b,c) {
+            console.log(a,b,c);
+        },
+        error:function (a,b,c) {
+            console.log(a,b,c);
+        },
+        headers : {
+            'Content-Type' : 'application/json'
+        }
+    });
+    console.log("update ref");
+    linkref(id);
+}
+
 function linkref(id) {
     link_json = {
         'ref_location' : $.current_content,
@@ -411,6 +448,7 @@ function linkref(id) {
         contentType : 'application/x-www-form-urlencoded; charset=UTF-8',
         success: function (a,b,c) {
             console.log(a,b,c);
+            update_content();
         },
         error:function (a,b,c) {
             console.log(a,b,c);
@@ -450,23 +488,130 @@ function menucreateref(ref_type, content, words, single) {
 }
 
 function createref() {
-    menucreateref($('.reftype')[0].value, $('.reftextcontent')[0].value, [$('#choosed_text').text()], $('.uniqe')[0].checked)
+    menucreateref($('.reftype')[0].value, $('.reftextcontent')[0].value, [$('#choosed_text').text().trim()], $('.uniqe')[0].checked)
     console.log("create ref");
 }
 
 function new_ref(start, end) {
     text = $.content_str.split(' ').slice(start, end+1).join(' ');
     $('#choosed_text').html(text);
-    ref_str =  'סוג:' + '<div class="row"><div class="col-xs-4 pull-right" ><select class="reftype form-control">';
+    ref_str =  '<div class="row">חיפוש:<input type="text" name="search" class="searchref"><br/><div class="col-xs-4 pull-right" >'
+    ref_str +=  'סוג:' + '<select class="reftype form-control">';
     $.each(ref_types, function (i, v) {
         ref_str += '<option value="{0}">{1}</option>'.format(v, he_ref_types[i]);
     });
-    ref_str += '</select></div></div><br/>' + 'ייחודי:';
+    ref_str += '</select></div></div><br/><div class="refsearchres" style="display: none"></div><div class="new_ref">' + 'ייחודי:';
     ref_str += '<input type="checkbox" class="uniqe"></input><br/>' + 'תוכן:';
     ref_str += '<textarea class="reftextcontent form-control" style="width: 100%; height: 300px;"></textarea><br/>';
-    ref_str += '<button onclick="createref()" class="btn btn-default"> יצירת קישור </button>';
+    ref_str += '<button onclick="createref()" class="btn btn-default"> יצירת קישור </button></div>';
     $('#ref_elements').html(ref_str);
+    $(".searchref").bind('input', function(t){
+        if ($(".searchref").val().length > 2) {
+            $('.new_ref').hide();
+            $('.refsearchres').html('');
+            $('.refsearchres').show();
+            $.each($.suggested_refs_to_page['_items'], function (i, v) {
+                $.each(v['words'], function (i, w) {
+                    if ((w.indexOf($(".searchref").val()) > -1) && ($('.reftype').val() == v['ref_type'])) {
+                        var tx = v['content'];
+                        tx = tx.substring(0,Math.min(25, tx.length));
+                        $('.refsearchres').append('<div onclick="addref(\'{2}\', \'{3}\')" style="color: deepskyblue"><b>{0}:</b> {1}<br/></div>'.format(w, tx, v['_id'], v['words']));
+                        return false;
+                    }
+                })
+            })
+        }
+        else {
+            $('.new_ref').show();
+            $('.refsearchres').hide();
+            $('.refsearchres').html('');
+        }
+
+    });
 }
+
+function editref(ref, id) {
+    ref_type = $('.{0} select'.format(ref))[0].value;
+    content = $('.{0} .reftextcontent'.format(ref))[0].value;
+    words = $('.{0} .words'.format(ref))[0].value.split(',');
+    single = $('.{0} .uniqe'.format(ref))[0].checked;
+    j = {
+        'ref_type': ref_type,
+        'content' : content,
+        'words' : words,
+        'single' : single
+    };
+    $.ajax({
+        type: "PATCH",
+        url: ref_url+'simple_refs/'+id,
+        data: JSON.stringify(j),
+        dataType : 'json',
+        contentType : 'application/x-www-form-urlencoded; charset=UTF-8',
+        success: function (a,b,c) {
+            update_content();
+            console.log(a,b,c);
+        },
+        error:function (a,b,c) {
+            console.log(a,b,c);
+        },
+        headers : {
+            'Content-Type' : 'application/json'
+        }
+    });
+    console.log("update ref");
+
+}
+
+function deleteref(ref) {
+    $.ajax({
+        type: "DELETE",
+        url: ref_url+'refs/'+ref,
+        data: {},
+        dataType : 'json',
+        contentType : 'application/x-www-form-urlencoded; charset=UTF-8',
+        success: function (a,b,c) {
+            update_content();
+            console.log(a,b,c);
+        },
+        error:function (a,b,c) {
+            console.log(a,b,c);
+        },
+        headers : {
+            'Content-Type' : 'application/json'
+        }
+    });
+    console.log("delete ref");
+}
+
+function edit_ref_click(t) {
+    if ($.view != 4 || !$(t).attr('refs')) {
+        return;
+    }
+    var local_refs = $(t).attr('refs').split(',');
+    var ref_str = '';
+    $.each(local_refs, function (i, v) {
+        r = $.reflink[$(t).attr('id') + v];
+        ref_str += '<div onclick="$(\'.{3}\').toggle()"><em>{0}</em> <b>{1}:</b> {2}</div>'.format($.ref_type_dict[r[0]], r[2], r[1], r[3]['_id']);
+        ref_str += '<div class="{0} editref" style="display: none"><div class="row"><div class="col-xs-4 pull-right" >סוג: <select class="reftype form-control">'.format(r[3]['_id']);
+        $.each(ref_types, function (i, v) {
+            var selected = '';
+            if (v==r[0]) {
+                selected = 'selected';
+            }
+            ref_str += '<option value="{0}" {2}>{1}</option>'.format(v, he_ref_types[i], selected);
+        });
+        ref_str += '</select></div></div><br/>' + 'ייחודי:';
+        ref_str += '<input type="checkbox" class="uniqe form-control" value="{0}"></input><br/>'.format(r[3]['link']['single']) + 'תוכן:';
+        ref_str += '<textarea class="reftextcontent form-control" style="width: 100%; height: 300px;">{0}</textarea><br/>'.format(r[3]['link']['content']);
+        ref_str += 'מילים (מופרד בפסיק):<input type="text" class="words form-control" value="{0}"></input><br/>'.format(r[3]['link']['words']);
+        ref_str += '<input type="hidden" name="id" class="id form-control" value="{0}"><hr/>'.format(r[3]['_id']);
+        ref_str += '<button onclick="editref(\'{0}\', \'{1}\')" class="btn btn-default"> עדכון קישור </button>'.format(r[3]['_id'], r[3]['link']['_id']);
+        ref_str += '<button onclick="deleteref(\'{0}\')" class="btn btn-default"> מחיקת קישור </button></div>'.format(r[3]['_id']);
+    });
+    $("#ref_elements").html(ref_str);
+}
+
+
 
 function cont_click(t) {
     if ($.view != 1 || !$(t).attr('refs')) {

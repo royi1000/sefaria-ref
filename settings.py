@@ -37,12 +37,12 @@ RESOURCE_METHODS = ['GET', 'POST', 'DELETE']
 
 # Enable reads (GET), edits (PATCH) and deletes of individual items
 # (defaults to read-only item access).
-ITEM_METHODS = ['GET', 'PATCH', 'DELETE']
+ITEM_METHODS = ['GET', 'PATCH', 'DELETE', 'PUT']
 
 # We enable standard client cache directives for all resources exposed by the
 # API. We can always override these global settings later.
-CACHE_CONTROL = 'max-age=20'
-CACHE_EXPIRES = 20
+CACHE_CONTROL = 'max-age=0'
+CACHE_EXPIRES = 0
 IF_MATCH = False
 
 X_DOMAINS = '*'
@@ -63,7 +63,7 @@ simple_refs = {
             'type': 'string',
             'minlength': 1,
             'required': True,
-            'allowed': ["rt", "aramic", "location", "paragraph type", "biography", "beur"],
+            'allowed': ["rt", "aramic", "location", "paragraph type", "biography", "beur", "dictionary", "halacha"],
         },
         'content' : {
             'type': 'string',
