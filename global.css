@@ -6,10 +6,34 @@ body {
     display: inline-block;
 }
 
-.reflink {
+.aramic {
     color: royalblue;
 }
 
 .high {
     background: yellow;
+}
+
+.dictionary{
+    color: cornflowerblue;
+}
+
+.biography {
+    color: brown;
+}
+
+.rt {
+    color: blueviolet;
+}
+
+.location{
+    color: darkblue;
+}
+
+.beur {
+    color: darkgreen;
+}
+
+.halacha {
+    color: coral;
 }

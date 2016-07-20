@@ -146,6 +146,7 @@ function load_page_refs() {
                             refs = refs.split(',');
                         }
                         o.addClass('reflink');
+                        o.addClass(v['link']['ref_type'].replace(' ', '_'));
                         refs.push(v['link']['_id']);
                         o.attr('refs', refs.join(','));
                         $.reflink['w'+ ind + v['link']['_id']] = [v['link']['ref_type'], v['link']['content'], all_w, v];
@@ -601,7 +602,11 @@ function edit_ref_click(t) {
             ref_str += '<option value="{0}" {2}>{1}</option>'.format(v, he_ref_types[i], selected);
         });
         ref_str += '</select></div></div><br/>' + 'ייחודי:';
-        ref_str += '<input type="checkbox" class="uniqe form-control" value="{0}"></input><br/>'.format(r[3]['link']['single']) + 'תוכן:';
+        checked = '';
+        if(r[3]['link']['single']){
+            checked = 'checked';
+        }
+        ref_str += '<input type="checkbox" class="uniqe form-control" value="{0}" {1}></input><br/>'.format(r[3]['link']['single'], checked) + 'תוכן:';
         ref_str += '<textarea class="reftextcontent form-control" style="width: 100%; height: 300px;">{0}</textarea><br/>'.format(r[3]['link']['content']);
         ref_str += 'מילים (מופרד בפסיק):<input type="text" class="words form-control" value="{0}"></input><br/>'.format(r[3]['link']['words']);
         ref_str += '<input type="hidden" name="id" class="id form-control" value="{0}"><hr/>'.format(r[3]['_id']);
