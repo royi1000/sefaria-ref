@@ -22,7 +22,7 @@ if (!Array.prototype.last){
 
 function check(hay, needle, from) {
     var i = 1;
-    while (i < needle.length - 1) {
+    while (i < needle.length) {
         if (hay[from] != needle[i])
             return false;
         i++;
@@ -43,7 +43,7 @@ function FindWordIndex(str, findme) {
     return indices;
 }
 
-var ref_url = 'http://localhost:5000/';
+var ref_url = 'http://'+location.hostname+':5000/';
 var sef_url = 'http://www.sefaria.org/api/';
 var ref_types = ["rt", "aramic", "location", "paragraph type", "biography", "beur", "dictionary", "halacha"];
 var he_ref_types = ["ראשי תיבות", "מילון ארמי", "מקום", "קטע", "ביוגרפיה", "ביאור קצר", "מילון", "הלכה"];
@@ -82,16 +82,16 @@ function load_suggested_refs(){
             $.suggestions_count = 0;
             $.suggested_refs_to_page = a;
             $.each($.suggested_refs_to_page['_items'], function (i, v) {
-                $.each(v['words'], function (i, w) {
-                    arr = FindWordIndex($.content_str, w);
+                $.each(v['words'], function (ii, ww) {
+                    arr = FindWordIndex($.content_str, ww);
                     res_arr = [];
-                    $.each(arr, function (i, wi) {
+                    $.each(arr, function (iii, wi) {
                         if (!((v['_id'] in $.existing_word_refs) && ($.existing_word_refs[v['_id']].indexOf(wi)>-1))){
                             res_arr.push(wi);
                         }
                     });
                     if (res_arr.length) {
-                        $.suggestions.push([res_arr, v, w]);
+                        $.suggestions.push([res_arr, v, ww]);
                         $.suggestions_count += res_arr.length;
                     }
                 });
