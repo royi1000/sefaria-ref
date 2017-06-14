@@ -17,6 +17,7 @@
 
 import os
 from eve import Eve
+from flask import send_from_directory
 
 # Heroku support: bind to PORT if defined, otherwise default to 5000.
 if 'PORT' in os.environ:
@@ -28,8 +29,12 @@ else:
     port = 5000
     host = '127.0.0.1'
 
-app = Eve()
+app = Eve(__name__, static_url_path='', static_folder="")
+@app.route('/files')
+def index():
+    return send_from_directory("", 'index.html')
+
 
 
 if __name__ == '__main__':
-    app.run(host=host, port=port)
+    app.run(host=host, port=5000)

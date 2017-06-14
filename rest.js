@@ -645,7 +645,7 @@ function cont_select() {
 }
 
 $( document ).ready(function() {
-    $.toc_index = [3];
+    $.toc_index = [2];
     $.ref_type_dict = {};
     $.each(ref_types, function (i, v) {
         $.ref_type_dict[v] = he_ref_types[i];
